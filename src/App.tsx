@@ -1,4 +1,4 @@
-import React, {createContext, useEffect, useRef, useState} from 'react';
+import React, {createContext, useContext, useEffect, useRef, useState} from 'react';
 import './App.css';
 import Table from './components/Table';
 
@@ -10,6 +10,7 @@ export const WordleContext = createContext({
 });
 
 function App() {
+    const {countOfTrying, countOfLetter} = useContext(WordleContext);
     const [secretWord, setSecretWord] = useState<string>('world');
     const [inputtedWord, setInputtedWord] = useState<string>('');
     const inputRef = useRef<HTMLInputElement>(null);
