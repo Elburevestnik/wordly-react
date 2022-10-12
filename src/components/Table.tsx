@@ -1,29 +1,17 @@
-import React, {useContext, useEffect, useState} from 'react';
-import {WordleContext} from '../App';
+import React, {useRef, useState} from 'react';
+import {store} from '../App';
 
-export interface TableProps {
-    attemptNumber: number;
-}
-export default function Table({attemptNumber}: TableProps) {
-    const {inputtedWord, secretWord, countOfLetter, countOfTrying} = useContext(WordleContext);
-
-    const [state, setState] = useState<Array<string[]>>([]);
-
-    useEffect(() => {
-        if(attemptNumber !== -1) {
-            inputtedWord.split('');
-            let newState = [...state];
-            newState[attemptNumber] = inputtedWord.split('');
-            setState(newState);
-        } else {
-            setState(Array(countOfTrying).fill(Array(countOfLetter).fill('')))
-        }
-    }, [inputtedWord, attemptNumber]);
-
+export default function Table() {
+    const secretWord = useRef('');
+    const [previousAttempts, setPreviousAttempts] = useState<string[][]>([]);
+    store.subscribe(() => {
+        secretWord.current = store.getState().secretWord;
+        setPreviousAttempts(store.getState().previousAttempts);
+    })
     return (
         <table>
             <tbody>
-            {state.map((item: any, index: number) => {
+            {previousAttempts.map((item: any, index: number) => {
                 return (<tr key={index.toString()}>
                     {item.map((item: any, idx: number) => {
                         return (<td style={{
@@ -32,7 +20,7 @@ export default function Table({attemptNumber}: TableProps) {
                             height: '30px',
                             textAlign: 'center',
                             verticalAlign: 'center',
-                            color: secretWord.includes(item) ? 'deepskyblue' : 'white',
+                            color: secretWord.current.includes(item) ? 'deepskyblue' : 'white',
                         }} key={index.toString() + idx.toString()}>{item}</td>)
                     })}
                 </tr>);

@@ -1,65 +1,63 @@
-import React, {createContext, useContext, useEffect, useRef, useState} from 'react';
+import React, {useRef, useState} from 'react';
 import './App.css';
 import Table from './components/Table';
+import {useWords} from "./components/Words";
+import {createStore, Store} from "redux";
+import {Reducer} from "./store/reducer";
+import {WordleModel} from "./models/wordle.model";
+import {Action} from "./constants/action.enum";
+import {ActionModel} from "./models/action.model";
 
-export const WordleContext = createContext({
-    secretWord: '',
+// @ts-ignore
+export let store: Store<WordleModel, ActionModel> = createStore(Reducer, {
     inputtedWord: '',
+    previousAttempts: null,
+    secretWord: '',
+    attemptNumber: 0,
     countOfLetter: 5,
     countOfTrying: 6,
 });
 
 function App() {
-    const {countOfTrying, countOfLetter} = useContext(WordleContext);
-    const [secretWord, setSecretWord] = useState<string>('world');
-    const [inputtedWord, setInputtedWord] = useState<string>('');
+    const {countOfLetter, countOfTrying}: WordleModel = store.getState();
     const inputRef = useRef<HTMLInputElement>(null);
-    const attemptNumber = useRef<number>(-1);
     const [gameOvered, setGameOvered] = useState(false);
     const inputWord = () => {
-        attemptNumber.current++;
-        const value = inputRef.current || {value: ''};
-        setInputtedWord(value.value);
-        inputRef.current && (inputRef.current.value = '');
+        if (inputRef.current?.value) {
+            store.dispatch({type: Action.FillAttemptInfo, payload: {inputtedWord: inputRef.current.value}})
+            inputRef.current && (inputRef.current.value = '');
+        }
     };
 
-    useEffect(() => {
-        setSecretWord('world');
-    });
+    const {secretWord, trigger} = useWords(countOfLetter);
 
-    useEffect(() => {
-        if (inputtedWord === secretWord || countOfTrying === attemptNumber.current) {
+    store.subscribe(() => {
+        const {inputtedWord, attemptNumber, secretWord} = store.getState();
+        if (inputtedWord === secretWord || countOfTrying === attemptNumber) {
             setGameOvered(true);
         }
-    }, [inputtedWord])
-    // const initWord = async function f() {
-    //     let wordList: string[] = [];
-    //     if (!round) {
-    //         wordList = await Words(countOfLetter);
-    //         setWords(wordList);
-    //         setSelectedWord(wordList[round]);
-    //     } else if (words.length < round) {
-    //         round = 0;
-    //         f();
-    //     } else {
-    //         setSelectedWord(wordList[round]);
-    //     }
-    // }
+    })
 
-    // initWord();
+    const resetGame = () => {
+        setGameOvered(false);
+        store.dispatch({type: Action.ResetGame})
+        trigger();
+    }
 
     return (
         <div className="App">
             <main className="App-header">
-                <WordleContext.Provider value={{inputtedWord: inputtedWord, secretWord: secretWord, countOfLetter: countOfLetter, countOfTrying: countOfTrying}}>
-                    <Table attemptNumber={attemptNumber.current}/>
-                </WordleContext.Provider>
+                <Table/>
                 <input ref={inputRef} type="text" style={{marginTop: '10px'}} maxLength={countOfLetter} disabled={gameOvered}></input>
-                <button onClick={() => {inputWord()}} style={{marginTop: '10px'}} disabled={gameOvered}>Let's try</button>
+                <button onClick={() => {
+                    inputWord();
+                }} style={{marginTop: '10px'}} disabled={gameOvered}>Let's try</button>
                <React.Fragment>
                    {gameOvered && <div style={{height: '100px', width: '100px'}}>
                         <p>The End!</p>
-                        <button onClick={() => (setGameOvered(false))}>Close</button>
+                        <button onClick={() => {
+                            resetGame();
+                        }}>Close</button>
                     </div>}
                 </React.Fragment>
             </main>
